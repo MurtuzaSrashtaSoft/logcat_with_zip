@@ -44,7 +44,7 @@ packages:
     source: hosted
     version: "1.15.0"
   f_logs:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: f_logs
       url: "https://pub.dartlang.org"

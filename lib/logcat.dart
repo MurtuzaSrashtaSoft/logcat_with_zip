@@ -3,9 +3,20 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 
+import 'package:f_logs/f_logs.dart';
 import 'package:flutter/services.dart';
+
+void log2(String message, {name: "Airtable"}) {
+  FLog.logThis(
+    methodName: name,
+    text: message,
+    type: LogLevel.INFO,
+    dataLogType: DataLogType.DEVICE.toString(),
+  );
+}
 
 /// Plugin for fetching the app logs
 class Logcat {
@@ -26,5 +37,66 @@ class Logcat {
     }
 
     return logs;
+  }
+
+  static Future<bool> zipLogFile(
+      String srcFilePath, String dstFilePath, String key) async {
+    bool bResult;
+    try {
+      if (Platform.isIOS) {
+        bResult = await platform.invokeMethod('zipAndEncryptLogFile', {
+          "srcFilePath": srcFilePath.toString(),
+          "dstFilePath": dstFilePath.toString(),
+          "key": key,
+        });
+      } else {
+        bResult = await platform.invokeMethod('zipLogFile', {
+          "srcFilePath": srcFilePath.toString(),
+          "dstFilePath": dstFilePath.toString(),
+          "key": key,
+        });
+      }
+    } on MissingPluginException catch (e) {
+      log2("MissingPluginException : ${e.toString()}");
+    }
+    return (bResult != null && bResult);
+  }
+
+  static encrypt(
+      String plainFilePath, String cipherFilePath, String key) async {
+    try {
+      await platform.invokeMethod('encrypt', {
+        "plainFilePath": plainFilePath.toString(),
+        "cipherFilePath": cipherFilePath.toString(),
+        "key": key,
+      });
+    } on MissingPluginException catch (e) {
+      log2("MissingPluginException : ${e.toString()}");
+    }
+  }
+
+  static Future<bool> isAutoRotateMode() async {
+    if (Platform.isIOS) {
+      log("Platform iOS");
+      try {
+        log("try");
+        return await platform.invokeMethod(
+            "shouldAutorotateToInterfaceOrientation",
+            {"toInterfaceOrientation": 5});
+      } on PlatformException catch (e) {
+        log("Failed to : ${e.toString()}");
+      }
+
+      log("Failed get isAutoRotateMode");
+      return false;
+    }
+
+    try {
+      return await platform.invokeMethod('isAutoRotateMode');
+    } on PlatformException catch (e) {
+      print("Failed to : ${e.toString()}");
+    }
+    print("Failed get isAutoRotateMode");
+    return false;
   }
 }
